@@ -70,7 +70,7 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
     fix-permissions "${CONDA_DIR}"
 
 USER ${NB_UID}
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.10
 
 # Setup work directory for backward-compatibility
 RUN mkdir "/home/${NB_USER}/work" && \
@@ -112,9 +112,8 @@ RUN set -x && \
 # Do all this in a single RUN command to avoid duplicating all of the
 # files across image layers when the permissions change
 RUN mamba install --quiet --yes \
-    'notebook' \
     'jupyterhub=' \
-    'jupyterlab=2.1' && \
+    'jupyterlab=4.2' && \
     mamba clean --all -f -y && \
     npm cache clean --force && \
     jupyter notebook --generate-config && \
@@ -129,6 +128,12 @@ RUN pip install  -I --user -r requirements.txt
 
 RUN conda install nodejs
 
+RUN wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+RUN nvm install 16.12
+
+RUN nvm use 16.12
+
 COPY ./dfnotebook-extension "/home/${NB_USER}/dfnotebook-extension"
 
 USER root
@@ -137,18 +142,37 @@ RUN chown -R ${NB_USER} "/home/${NB_USER}/dfnotebook-extension"
 
 USER ${NB_UID}
 
-RUN cd "/home/${NB_USER}/dfnotebook-extension" && \
-    jupyter labextension link dfoutputarea --no-build && \
-    jupyter labextension link dfcells --no-build && \
-    jupyter labextension link dfnotebook --no-build
+# RUN cd "/home/${NB_USER}/dfnotebook-extension" && \
+#     jupyter labextension link dfoutputarea --no-build && \
+#     jupyter labextension link dfcells --no-build && \
+#     jupyter labextension link dfnotebook --no-build
 
-RUN cd "/home/${NB_USER}/dfnotebook-extension" && \
-    jupyter labextension install dfnotebook-extension
+RUN cd "/home/${NB_USER}/dfnotebook-extension" && \ 
+    pip install -e .
 
-RUN cd "/home/${NB_USER}/dfnotebook-extension/dfnotebook-extension" && \
+RUN cd "/home/${NB_USER}/dfnotebook-extension" && \ 
+    jlpm install
+
+RUN cd "/home/${NB_USER}/dfnotebook-extension" && \ 
     jlpm build
 
-RUN jupyter lab build
+# RUN cd "/home/${NB_USER}/dfnotebook-extension" && \
+#     jupyter labextension install dfnotebook-extension
+
+# RUN cd "/home/${NB_USER}/dfnotebook-extension/dfnotebook-extension" && \
+#     jlpm build
+
+COPY ./dfkernel "/home/${NB_USER}/dfkernel"
+
+USER root
+
+RUN chown -R ${NB_USER} "/home/${NB_USER}/dfkernel"
+
+USER ${NB_UID}
+
+RUN cd "/home/${NB_USER}/dfkernel" && \ 
+    pip install -e . && \
+    pythom -m dfkernel install --sys-prefix
 
 EXPOSE 8888
 
@@ -168,8 +192,6 @@ USER root
 RUN sed -re "s/c.NotebookApp/c.ServerApp/g" \
     /etc/jupyter/jupyter_notebook_config.py > /etc/jupyter/jupyter_server_config.py && \
     fix-permissions /etc/jupyter/
-
-
 
 
 # Switch back to jovyan to avoid accidental container runs as root
