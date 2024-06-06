@@ -1,0 +1,6 @@
+[submodule "dfkernel"]
+	path = dfkernel
+	url = https://github.com/dataflownb/dfkernel.git
+[submodule "dfnotebook-extension"]
+	path = dfnotebook-extension
+	url = https://github.com/dataflownb/dfnotebook-extension.git
