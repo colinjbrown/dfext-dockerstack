@@ -21,3 +21,9 @@ A simple command such as
 `docker run -p 8888:8888 dfext`
 
 will allow you to access the extension in the browser at `127.0.0.1:8888/lab` with the proper token authentication given from the docker console.
+
+# Additional Scripts
+
+In addition to the provided Dockerfile there are two scripts provided in this repository that allow for ease of use development when users may want to evaluate multiple branches.
+
+`clean.sh` provides a reset to main branch for both `dfkernel` and `dfnotebook-extension` including removing any node modules or unnessecary files, `test.sh` provides all commands nessecary to do a fresh development installation of `dfkernel` and `dfnotebook-extension`.
